@@ -134,3 +134,64 @@ action = decide_action(score, is_stale)
 print("Data stale:", is_stale)
 print("Score:", score)
 print("Decision:", action)
+
+
+import fastapi
+from fastapi.middleware.cors import CORSMiddleware
+
+app = fastapi.FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+cache = {}
+@app.post("/cache/add/{key}/{value}")
+def add_cache(key: str, value: str):
+    cache[key] = value
+    return {
+        "message": "Data added",
+        "key": key,
+        "value": value
+    }
+
+
+@app.get("/cache/get/{key}")
+def get_cache(key: str):
+    if key in cache:
+        return {
+            "found": True,
+            "key": key,
+            "value": cache[key]
+        }
+
+    return {
+        "found": False,
+        "message": "Key not found"
+    }
+
+
+@app.delete("/cache/evict/{key}")
+def evict_cache(key: str):
+    if key in cache:
+        del cache[key]
+        return {
+            "message": "Data evicted",
+            "key": key
+        }
+
+    return {
+        "message": "Key not found"
+    }
+
+
+@app.get("/cache/status")
+def cache_status():
+    return {
+        "size": len(cache),
+        "data": cache
+    }
